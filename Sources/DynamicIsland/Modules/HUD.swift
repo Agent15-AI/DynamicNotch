@@ -68,7 +68,6 @@ final class HUD {
     private(set) var current: Kind?
 
     private var dismiss: DispatchWorkItem?
-    private var armedSources: Set<String> = []
 
     private init() {}
 
@@ -108,17 +107,5 @@ final class HUD {
         DispatchQueue.main.asyncAfter(deadline: .now() + 21.6) {
             self.show(.upcoming(title: "Design review", detail: "In 5 min · 10:00 AM · Join", joinURL: nil), for: 2.6)
         }
-    }
-
-    /// Suppress the first event after launch, which fires from the initial
-    /// property read rather than from the user doing anything.
-    ///
-    /// Keyed per source. One shared flag meant the first observer to fire burned
-    /// the suppression for every other one: a microphone opening at login armed
-    /// the battery, or the battery armed the microphone, depending purely on
-    /// which won the race. Whichever lost had its first real event swallowed -
-    /// so plugging in the charger showed nothing, once, unpredictably.
-    func armed(_ source: String) -> Bool {
-        armedSources.insert(source).inserted == false
     }
 }

@@ -162,7 +162,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // A keep-awake held "while plugged in" has to let go the moment the
             // cable comes out.
             Utilities.shared.reevaluateCondition()
-            guard Settings.shared.battery, battery.lastPlugChange != nil, HUD.shared.armed("battery") else { return }
+            // No first-event suppression: the launch read happens before this
+            // observer exists, so the first change it sees is a real plug.
+            guard Settings.shared.battery, battery.lastPlugChange != nil else { return }
             HUD.shared.show(.charging(percent: battery.percent, plugged: battery.pluggedIn), for: 2.2)
         }
     }
@@ -170,7 +172,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func observeRecording() {
         let audio = AudioMonitor.shared
         track({ _ = audio.inputChangeCount }) {
-            guard Settings.shared.recording, HUD.shared.armed("microphone") else { return }
+            guard Settings.shared.recording else { return }
             HUD.shared.show(
                 .recording(app: audio.micApp, started: audio.micActive),
                 for: 2.4
