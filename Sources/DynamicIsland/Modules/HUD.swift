@@ -32,6 +32,8 @@ final class HUD {
         case verification(code: String)
         /// Look away until this date. See `EyeBreak`.
         case eyeBreak(until: Date)
+        /// A newer release, found by a background check. Clicking installs it.
+        case update(version: String)
     }
 
     /// What clicking the closed island does while this activity is up, for the
@@ -54,6 +56,7 @@ final class HUD {
         // Clicking ends the break early - a reminder you cannot dismiss is a
         // reminder people switch off.
         case .eyeBreak: { EyeBreak.shared.skip() }
+        case .update: { Updater.shared.check() }
         default: nil
         }
     }

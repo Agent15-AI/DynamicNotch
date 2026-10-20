@@ -38,5 +38,15 @@
 	<string>Announces downloads as they finish.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/Agent15-AI/DynamicNotch/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>46uvk3rYQMOO/k9j6iPNiQa5se/l6k7D08P77nHZjuQ=</string>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 </dict>
 </plist>

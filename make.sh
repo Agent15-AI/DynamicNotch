@@ -21,6 +21,11 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/DynamicIsland"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
+# Sparkle, for updates. SwiftPM links it from beside the binary; in the bundle
+# it lives in Frameworks, so the binary is told to look there too.
+ditto "$BIN_DIR/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
+install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/DynamicIsland"
+
 # The MediaRemote adapter must live in Resources - perl is handed absolute paths
 # to the framework and the script at runtime.
 cp -R Vendor/MediaRemoteAdapter.framework Vendor/mediaremote-adapter.pl "$APP/Contents/Resources/"
@@ -46,19 +51,50 @@ if [ -n "$DIST" ]; then
   cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
   codesign --force --sign - --identifier dev.local.dynamicisland "$APP"
   VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist)"
+  BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' Resources/Info.plist)"
   ZIP="dist/DynamicNotch-$VERSION.zip"
   mkdir -p dist
   rm -f "$ZIP"
   ditto -c -k --norsrc --noextattr --keepParent "$APP" "$ZIP"
-  SHA="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
-  # A released version's checksum must never change: the cask on main would
-  # stop matching the zip already on GitHub, and every install would fail.
-  if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
-    echo "built $ZIP ($SHA) - v$VERSION is already released, cask left alone; bump the version to release"
-    exit 0
-  fi
-  sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 \".*\"/  sha256 \"$SHA\"/" Casks/dynamicnotch.rb
-  echo "built $ZIP ($SHA), Casks/dynamicnotch.rb updated"
+
+  # Sparkle installs an update only when it is signed by the key whose public
+  # half is SUPublicEDKey. The private half is in the releaser's keychain,
+  # under the account "dynamicnotch" (Sparkle's generate_keys made it).
+  SIGN=.build/artifacts/sparkle/Sparkle/bin/sign_update
+  SIGNATURE="$("$SIGN" --account dynamicnotch -p "$ZIP")"
+  # Checked against the key the app carries, so no installed copy is ever
+  # offered an update it would refuse.
+  PUBLIC="$(/usr/libexec/PlistBuddy -c 'Print SUPublicEDKey' Resources/Info.plist)"
+  ZIP_PATH="$ZIP" SIGNATURE="$SIGNATURE" PUBLIC="$PUBLIC" swift - <<'SWIFT' || { echo "the update signature does not match SUPublicEDKey"; exit 1; }
+import CryptoKit
+import Foundation
+let env = ProcessInfo.processInfo.environment
+let key = try Curve25519.Signing.PublicKey(rawRepresentation: Data(base64Encoded: env["PUBLIC"]!)!)
+let data = try Data(contentsOf: URL(fileURLWithPath: env["ZIP_PATH"]!))
+exit(key.isValidSignature(Data(base64Encoded: env["SIGNATURE"]!)!, for: data) ? 0 : 1)
+SWIFT
+
+  # Attached to the release; SUFeedURL reads the latest release's copy.
+  cat > dist/appcast.xml <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>DynamicNotch</title>
+    <item>
+      <title>$VERSION</title>
+      <pubDate>$(LC_ALL=C date -u "+%a, %d %b %Y %H:%M:%S +0000")</pubDate>
+      <sparkle:version>$BUILD</sparkle:version>
+      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://github.com/Agent15-AI/DynamicNotch/releases/tag/v$VERSION</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/Agent15-AI/DynamicNotch/releases/download/v$VERSION/DynamicNotch-$VERSION.zip" length="$(stat -f %z "$ZIP")" type="application/octet-stream" sparkle:edSignature="$SIGNATURE"/>
+    </item>
+  </channel>
+</rss>
+XML
+  # SURequireSignedFeed: the feed carries a signature of its own.
+  "$SIGN" --account dynamicnotch dist/appcast.xml
+  echo "built $ZIP and dist/appcast.xml (sha256 $(shasum -a 256 "$ZIP" | cut -d' ' -f1))"
   exit 0
 fi
 

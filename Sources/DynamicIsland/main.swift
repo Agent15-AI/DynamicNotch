@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         installEditMenu()
         StatusItem.shared.install()
+        Updater.shared.start()
         Hotkeys.shared.install()
         FinderKeys.shared.install()
         PanelManager.shared.rebuild()
@@ -24,7 +25,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         AudioMonitor.shared.start()
         Battery.shared.start()
-        Tasks.shared.start()
         BluetoothWatch.shared.start()
         Downloads.shared.start()
         Screenshots.shared.start()
@@ -133,6 +133,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // playing into a device that no longer has a process behind it.
         MultiOutput.shared.stopAll()
         CameraPreview.shared.close()
+        // A child process outlives its parent. Left running, the helper streamed
+        // into a closed pipe until the next launch's `killOrphans`.
+        NowPlaying.shared.stop()
     }
 
     /// `withObservationTracking` fires once per change, so each handler re-arms
@@ -253,4 +256,11 @@ let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 let delegate = AppDelegate()
 app.delegate = delegate
+// `killall DynamicIsland` quits like the menu does. Its default action ends the
+// process on the spot, skipping applicationWillTerminate - and with it the audio
+// devices that must be torn down before the app goes.
+signal(SIGTERM, SIG_IGN)
+let terminate = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+terminate.setEventHandler { app.terminate(nil) }
+terminate.resume()
 app.run()

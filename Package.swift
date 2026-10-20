@@ -4,8 +4,15 @@ import PackageDescription
 let package = Package(
     name: "DynamicIsland",
     platforms: [.macOS("26.0")],
+    // Updates from the GitHub releases. The one dependency: verifying, swapping
+    // and relaunching a running app is not something to write again.
+    dependencies: [.package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0")],
     targets: [
-        .executableTarget(name: "DynamicIsland", dependencies: ["MenuBarShim", "Shine"], path: "Sources/DynamicIsland"),
+        .executableTarget(
+            name: "DynamicIsland",
+            dependencies: ["MenuBarShim", "Shine", .product(name: "Sparkle", package: "Sparkle")],
+            path: "Sources/DynamicIsland"
+        ),
         // macOS ships no MP3 encoder - AudioToolbox decodes MP3 and refuses to
         // write it, checked with `afconvert -f MPG3` ("fmt?"). shine is 2,800
         // lines of C with no dependencies, so "save as MP3" needs nothing

@@ -434,15 +434,6 @@ private struct ModuleSettings: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            Section("Tasks") {
-                Text("Write to ~/.dynamicisland/status.json to push work into the island. A single object still works; a \"tasks\" array shows several at once.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(#"{"tasks":[{"id":"build","text":"Running tests","state":"running","startedAt":1756000000,"app":"com.apple.Terminal"}]}"#)
-                    .font(.system(size: 11, design: .monospaced))
-                    .textSelection(.enabled)
-            }
         }
         .formStyle(.grouped)
     }

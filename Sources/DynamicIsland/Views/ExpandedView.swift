@@ -15,7 +15,6 @@ struct ExpandedView: View {
                 switch state.tab {
                 case .home: HomeTab(state: state, morph: morph)
                 case .shelf: ShelfTab(state: state)
-                case .tasks: TasksTab()
                 case .clock: ClockTab()
                 case .tools: ToolsTab()
                 case .notes: NotesTab()
@@ -169,7 +168,6 @@ private struct TabPill: View {
 
 private struct StatusCluster: View {
     var battery = Battery.shared
-    var tasks = Tasks.shared
     var focus = FocusMode.shared
     var countdown = CountdownTimer.shared
     var audio = AudioMonitor.shared
@@ -178,11 +176,6 @@ private struct StatusCluster: View {
     var body: some View {
         HStack(spacing: 8) {
             if audio.micActive { MicIndicator(size: 9) }
-
-            if let summary = tasks.summary {
-                Circle().fill(summary.tint).frame(width: 5, height: 5)
-                    .help(tasks.running > 0 ? "\(tasks.running) running" : "Tasks")
-            }
 
             if focus.active {
                 Image(systemName: focus.symbol)
@@ -386,104 +379,6 @@ private final class OutputMenuTarget: NSObject {
     @objc func stopMulti(_ sender: NSMenuItem) {
         MultiOutput.shared.stop()
     }
-}
-
-// MARK: - Tasks
-
-private struct TasksTab: View {
-    var tasks = Tasks.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 8) {
-                Text("CLAUDE CODE").sectionLabel()
-                if tasks.waiting > 0 {
-                    Text("\(tasks.waiting) waiting")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(Tasks.Item.State.waiting.tint)
-                }
-                if tasks.running > 0 {
-                    Text("\(tasks.running) working")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(Tasks.Item.State.running.tint)
-                }
-                Spacer()
-            }
-            .staggered(0)
-
-            if tasks.items.isEmpty {
-                EmptyState(symbol: "terminal",
-                           title: "No recent sessions",
-                           detail: "Projects you ran claude in appear here")
-                    .staggered(1)
-            } else {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        ForEach(Array(tasks.items.enumerated()), id: \.element.id) { index, item in
-                            TaskRow(item: item).staggered(index + 1)
-                        }
-                    }
-                }
-                .mask(
-                    LinearGradient(
-                        stops: [.init(color: .black, location: 0.88), .init(color: .clear, location: 1)],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                )
-            }
-            Spacer(minLength: 0)
-        }
-        // Read on open rather than watched. See `Tasks.start`.
-        .onAppear { tasks.refresh() }
-    }
-}
-
-private struct TaskRow: View {
-    var item: Tasks.Item
-    var tasks = Tasks.shared
-    @State private var hovering = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Circle().fill(item.state.tint).frame(width: 6, height: 6)
-            Text(item.text)
-                .font(.system(size: 11))
-                .foregroundStyle(item.state == .stopped ? Theme.secondary : Theme.primary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            // A word, not a clock. This was a `TimelineView` ticking once a
-            // second off the file's last-modified date, which is not a start
-            // time - so it never stopped and never meant anything: a session
-            // that ended hours ago counted upward all day. The dot already says
-            // what is happening; this says it in words for anyone who cannot
-            // separate the colours.
-            Text(item.state.label)
-                .font(.system(size: 9.5, weight: .medium))
-                .foregroundStyle(item.state.tint.opacity(0.9))
-            if item.app != nil, hovering {
-                Image(systemName: "arrow.up.forward.app")
-                    .font(.system(size: 9))
-                    .foregroundStyle(Theme.tertiary)
-            }
-        }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(hovering ? 0.07 : 0.035))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        // Ringed only while it wants you. Working is the normal
-                        // state and does not need a border shouting about it.
-                        .strokeBorder(item.state == .waiting ? item.state.tint.opacity(0.35) : .clear, lineWidth: 1)
-                )
-        )
-        .contentShape(Rectangle())
-        .hoverHighlight($hovering)
-        .onTapGesture { tasks.focus(item) }
-        .help(item.app != nil ? "Open \(item.text)" : item.text)
-    }
-
 }
 
 // MARK: - Home

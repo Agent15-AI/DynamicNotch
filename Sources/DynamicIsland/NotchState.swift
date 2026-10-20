@@ -27,7 +27,7 @@ final class NotchState {
     var pointerEnteredSinceOpen = false
 
     enum Tab: String, CaseIterable, Identifiable {
-        case home, shelf, tasks, clock, tools, notes, mixer
+        case home, shelf, clock, tools, notes, mixer
         var id: String { rawValue }
 
         /// Named for what it holds, not a vague umbrella - a specific label is
@@ -36,7 +36,6 @@ final class NotchState {
             switch self {
             case .home: "Now Playing"
             case .shelf: "Shelf"
-            case .tasks: "Claude Code"
             case .clock: "Clock"
             case .tools: "Tools"
             case .notes: "Notes"
@@ -48,7 +47,6 @@ final class NotchState {
             switch self {
             case .home: "house.fill"
             case .shelf: "tray.fill"
-            case .tasks: "terminal.fill"
             case .clock: "clock"
             case .tools: "wrench.adjustable.fill"
             case .notes: "square.and.pencil"
@@ -232,7 +230,6 @@ final class NotchState {
         case .whenActive: HUD.shared.current != nil
             || AudioMonitor.shared.micActive
             || (NowPlaying.shared.hasTrack && NowPlaying.shared.playing)
-            || Tasks.shared.summary != nil
         }
     }
 
@@ -355,9 +352,6 @@ final class NotchState {
         Clipboard.shared.capture()
         // At most once per half hour, and only because someone looked.
         Weather.shared.refreshIfStale()
-        // The status dot in the header is otherwise as old as the launch: the
-        // sessions are read on open, never watched. See `Tasks.start`.
-        Tasks.shared.refresh()
         // A track whose artist arrived after its title was looked up without
         // one. Free when nothing changed - see `Lyrics.refresh`.
         Lyrics.shared.refresh()

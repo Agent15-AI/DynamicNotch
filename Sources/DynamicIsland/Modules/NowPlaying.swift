@@ -202,7 +202,7 @@ final class NowPlaying {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
-    private func stop() {
+    func stop() {
         idleWork?.cancel()
         idleWork = nil
         restartWork?.cancel()

@@ -97,6 +97,8 @@ final class StatusItem: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
             .target = self
+        menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
+            .target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Dynamic Island", action: #selector(quit), keyEquivalent: "q")
             .target = self
@@ -112,6 +114,10 @@ final class StatusItem: NSObject, NSMenuDelegate {
 
     @objc private func toggleMenuBar() {
         MenuBarHider.shared.toggle()
+    }
+
+    @objc private func checkForUpdates() {
+        Updater.shared.check()
     }
 
     @objc private func openSettings() {

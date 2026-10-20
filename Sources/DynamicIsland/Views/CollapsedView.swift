@@ -8,7 +8,6 @@ struct CollapsedView: View {
 
     var nowPlaying = NowPlaying.shared
     var battery = Battery.shared
-    var tasks = Tasks.shared
     var hud = HUD.shared
     var audio = AudioMonitor.shared
 
@@ -70,6 +69,9 @@ struct CollapsedView: View {
         case .install(_, let icon):
             DownloadActivity(icon: icon, size: glyph * 1.85)
                 .transition(Self.fromLeading)
+        case .update:
+            UtilityActivity(symbol: "arrow.down.circle.fill", size: glyph * 1.85)
+                .transition(Self.fromLeading)
         case .upcoming(_, _, let url):
             UtilityActivity(symbol: url == nil ? "calendar" : "video.fill", size: glyph * 1.85)
                 .transition(Self.fromLeading)
@@ -106,11 +108,6 @@ struct CollapsedView: View {
                     // rather than cross-fading. This is the move that makes the
                     // island read as one thing opening.
                     .matchedGeometryEffect(id: "art", in: morph)
-            } else if let summary = tasks.summary {
-                Circle()
-                    .fill(summary.tint)
-                    .frame(width: glyph * 0.46, height: glyph * 0.46)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
         }
     }
@@ -164,6 +161,9 @@ struct CollapsedView: View {
                 .transition(Self.fromTrailing)
         case .install(let name, _):
             ActivityLabel(text: name, detail: "Click to install", size: glyph)
+                .transition(Self.fromTrailing)
+        case .update(let version):
+            ActivityLabel(text: "DynamicNotch \(version)", detail: "Click to update", size: glyph)
                 .transition(Self.fromTrailing)
         case .upcoming(let title, let detail, _):
             ActivityLabel(text: title, detail: detail, size: glyph)
@@ -305,28 +305,6 @@ struct Waveform: View {
                 }
             }
             .frame(height: geo.size.height, alignment: .center)
-        }
-    }
-}
-
-extension Tasks.Item.State {
-    var label: String {
-        switch self {
-        case .running: "working"
-        case .waiting: "waiting"
-        case .stopped: "stopped"
-        }
-    }
-
-    var tint: Color {
-        // A literal traffic light, because that is the thing every person
-        // already knows how to read. Not the app's gold/red palette: those two
-        // are for level and pressure, and a status this categorical should not
-        // have to be learned.
-        switch self {
-        case .running: Color(red: 0.30, green: 0.82, blue: 0.44)
-        case .waiting: Color(red: 1.00, green: 0.76, blue: 0.16)
-        case .stopped: Color(red: 1.00, green: 0.36, blue: 0.31)
         }
     }
 }
