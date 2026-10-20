@@ -122,10 +122,11 @@ final class Answers {
         }
     }
 
-    /// Whether `ask` has a real answer for the line: a calendar question the
-    /// calendar can read, or a weather question.
+    /// Whether `ask` has an answer for the line: a calendar question the
+    /// calendar can read, or a weather question. Checked on every keystroke,
+    /// so it matches words and never reads the calendar itself.
     static func canAnswer(_ text: String) -> Bool {
-        Weather.isQuestion(text) || CalendarAnswers.answer(text) != nil
+        Weather.isQuestion(text) || CalendarAnswers.isQuestion(text)
     }
 
     private func update(_ id: Exchange.ID, _ phase: Phase) {

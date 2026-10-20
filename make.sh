@@ -51,6 +51,12 @@ if [ -n "$DIST" ]; then
   rm -f "$ZIP"
   ditto -c -k --norsrc --noextattr --keepParent "$APP" "$ZIP"
   SHA="$(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
+  # A released version's checksum must never change: the cask on main would
+  # stop matching the zip already on GitHub, and every install would fail.
+  if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+    echo "built $ZIP ($SHA) - v$VERSION is already released, cask left alone; bump the version to release"
+    exit 0
+  fi
   sed -i '' -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 \".*\"/  sha256 \"$SHA\"/" Casks/dynamicnotch.rb
   echo "built $ZIP ($SHA), Casks/dynamicnotch.rb updated"
   exit 0

@@ -69,16 +69,20 @@ enum CalendarAnswers {
 
     // MARK: - Answering
 
+    /// Whether the line reads as a calendar question. Words only, no calendar
+    /// read, so the command bar can ask it on every keystroke.
+    static func isQuestion(_ question: String) -> Bool {
+        guard available else { return false }
+        let q = normalize(question)
+        return has(nouns, q) || has(phrases, q) || group(search, in: q) != nil
+    }
+
     /// Nil when the line is not a calendar question, or the calendar cannot be
     /// read.
     static func answer(_ question: String) -> Outcome? {
-        guard available else { return nil }
+        guard isQuestion(question) else { return nil }
         let q = normalize(question)
-        let search = group(#"^(?:when(?:'s| is| are) (?:my|our)|what time(?:'s| is) (?:my|our)|when do i have(?: my)?) (?:next )?(.+)$"#, in: q)
-        let isCalendar = has(nouns, q) || has(phrases, q) || search != nil
-        guard isCalendar else { return nil }
-
-        if let term = search { return .agenda(find(term)) }
+        if let term = group(search, in: q) { return .agenda(find(term)) }
 
         guard let when = when(q) else {
             return .clarify("Which day do you mean? Try “tomorrow”, “Friday” or “Oct 19”.")
@@ -268,6 +272,7 @@ enum CalendarAnswers {
     // MARK: - Reading the question
 
     private static let nouns = #"\b(calendar|schedule|agenda|events?|plans|class(es)?|lessons?|lectures?|meetings?|appointments?|exams?|tests?|quiz(zes)?|assignments?|homework|deadlines?)\b"#
+    private static let search = #"^(?:when(?:'s| is| are) (?:my|our)|what time(?:'s| is) (?:my|our)|when do i have(?: my)?) (?:next )?(.+)$"#
     private static let phrases = #"\b(what do i have|what have i got|what's on|whats on|what is on|am i (free|busy|available)|do i have (anything|any)|anything on|is there anything)\b"#
 
     struct When {
