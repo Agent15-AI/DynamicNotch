@@ -907,7 +907,7 @@ enum Calculator {
         case "sqrt": return one { $0.squareRoot() }
         case "cbrt": return one { cbrt($0) }
         // nthroot(3, 27) reads "the 3rd root of 27", the order Desmos uses.
-        case "nthroot": return two { $1 < 0 && Int($0) % 2 == 1 ? -pow(-$1, 1 / $0) : pow($1, 1 / $0) }
+        case "nthroot": return two { n, x in x < 0 && whole(n).map { $0 % 2 == 1 } == true ? -pow(-x, 1 / n) : pow(x, 1 / n) }
         case "abs": return one { abs($0) }
         case "sign": return one { $0 > 0 ? 1 : ($0 < 0 ? -1 : 0) }
         case "exp": return one { exp($0) }
@@ -938,8 +938,15 @@ enum Calculator {
         case "atanh": return one { atanh($0) }
         case "hypot": return two { (($0 * $0) + ($1 * $1)).squareRoot() }
         case "mod": return two { $0.truncatingRemainder(dividingBy: $1) }
-        case "gcd": return two { Double(gcd(Int($0), Int($1))) }
-        case "lcm": return two { let g = gcd(Int($0), Int($1)); return g == 0 ? 0 : abs($0 * $1) / Double(g) }
+        case "gcd": return two { a, b in
+            guard let x = whole(a), let y = whole(b) else { return .nan }
+            return Double(gcd(x, y))
+        }
+        case "lcm": return two { a, b in
+            guard let x = whole(a), let y = whole(b) else { return .nan }
+            let g = gcd(x, y)
+            return g == 0 ? 0 : abs(a * b) / Double(g)
+        }
         case "ncr": return two { combinations($0, $1) }
         case "npr": return two { permutations($0, $1) }
         case "min": return arguments.isEmpty ? nil : arguments.min()
@@ -957,9 +964,21 @@ enum Calculator {
         // The only two things here that are not the same every time you ask.
         case "rand": return arguments.isEmpty ? Double.random(in: 0 ..< 1) : nil
         case "randint":
-            return two { Double(Int.random(in: Int($0.rounded()) ... max(Int($0.rounded()), Int($1.rounded())))) }
+            return two { a, b in
+                guard let low = whole(a.rounded()), let high = whole(b.rounded()) else { return .nan }
+                return Double(Int.random(in: low ... max(low, high)))
+            }
         default: return nil
         }
+    }
+
+    /// `Int(_:)` traps on NaN, infinity and anything past 2^63, and the command
+    /// bar evaluates on every keystroke - so typing `gcd(1e20, 5)` or
+    /// `nthroot(sqrt(-1), 2)` took the whole app down. NaN out instead, which
+    /// `answer` already drops; past 2^53 a Double has no whole-number precision
+    /// left to keep anyway.
+    private static func whole(_ value: Double) -> Int? {
+        value.isFinite && abs(value) < 0x1p53 ? Int(value) : nil
     }
 
     private static func gcd(_ a: Int, _ b: Int) -> Int {
