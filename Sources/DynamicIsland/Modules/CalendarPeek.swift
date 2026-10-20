@@ -101,6 +101,12 @@ final class CalendarPeek {
 
     /// Called from the permission notice, never at launch.
     func requestAccess() {
+        // Refused once, macOS never shows the prompt again and the request comes
+        // straight back - so Allow did nothing. The pane is the only way back.
+        guard EKEventStore.authorizationStatus(for: .event) != .denied else {
+            Permissions.open("Privacy_Calendars")
+            return
+        }
         Task { @MainActor in
             _ = try? await store.requestFullAccessToEvents()
             readAuthorization()

@@ -40,7 +40,9 @@ final class Screenshots {
 
     /// Raises the folder dialog on purpose, from the button in Settings.
     func requestAccess() {
-        FolderAccess.probe(Self.permissionKey, folder) { [weak self] baseline in
+        FolderAccess.probe(Self.permissionKey, folder, refused: {
+            Permissions.open("Privacy_FilesAndFolders")
+        }) { [weak self] baseline in
             self?.attach(baseline)
         }
     }

@@ -46,10 +46,24 @@ final class Alarms: NSObject {
     }
 
     func requestAccess() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let refused = settings.authorizationStatus == .denied
             Task { @MainActor in
-                self.authorized = granted
-                if granted { self.rescheduleAll() }
+                // Refused once, macOS never asks again: the request returned
+                // false at once and Allow did nothing. The pane is the way back.
+                guard !refused else {
+                    let id = Bundle.main.bundleIdentifier ?? ""
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(id)") {
+                        NSWorkspace.shared.open(url)
+                    }
+                    return
+                }
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                    Task { @MainActor in
+                        self.authorized = granted
+                        if granted { self.rescheduleAll() }
+                    }
+                }
             }
         }
     }
