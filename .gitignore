@@ -1,0 +1,8 @@
+.build/
+build/
+*.app
+graphify-out/
+.DS_Store
+dist/
+.serena/
+.claude/
