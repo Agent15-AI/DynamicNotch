@@ -15,8 +15,11 @@ brew tap Agent15-AI/dynamicnotch https://github.com/Agent15-AI/DynamicNotch
 ```
 
 ```bash
-brew install --cask dynamicnotch
+brew install --cask agent15-ai/dynamicnotch/dynamicnotch
 ```
+
+The full name matters: Homebrew only loads casks from other taps when they are
+named in full, which counts as trusting that tap.
 
 **Or download** `DynamicNotch-x.y.z.zip` from
 [Releases](https://github.com/Agent15-AI/DynamicNotch/releases/latest), unzip it, and
