@@ -93,11 +93,14 @@ enum Interpret {
         let moment = instant(phrase, in: source)
         guard let moment else { return nil }
 
+        // The date on each side, compared as dates. Comparing each side's
+        // midnight compared two instants, and midnights in different zones are
+        // always under a day apart - so the marker below never appeared.
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = source
-        let sourceDay = calendar.startOfDay(for: moment.date)
+        let sourceDay = calendar.dateComponents([.year, .month, .day], from: moment.date)
         calendar.timeZone = target
-        let targetDay = calendar.startOfDay(for: moment.date)
+        let targetDay = calendar.dateComponents([.year, .month, .day], from: moment.date)
 
         let formatter = DateFormatter()
         formatter.locale = .current
