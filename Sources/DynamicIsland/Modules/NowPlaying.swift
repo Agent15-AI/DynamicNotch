@@ -134,10 +134,14 @@ final class NowPlaying {
     private func killOrphans() {
         guard !orphansCleared else { return }
         orphansCleared = true
+        guard let script = Bundle.main.path(forResource: "mediaremote-adapter", ofType: "pl") else { return }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
         // Match the script path, not "perl" - the user may be running their own.
-        process.arguments = ["-f", "mediaremote-adapter.pl"]
+        // The whole path, not the file name: other notch and media apps ship
+        // the same adapter under the same name, and killing theirs froze their
+        // Now Playing every time this app started.
+        process.arguments = ["-f", NSRegularExpression.escapedPattern(for: script)]
         process.standardError = FileHandle.nullDevice
         try? process.run()
         process.waitUntilExit()
