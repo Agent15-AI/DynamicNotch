@@ -857,6 +857,9 @@ private struct SystemSection: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        // With the home tab's stats switched off nothing else starts the sampler,
+        // and RAM, swap and the network rates sat at zero.
+        .onAppear { stats.start(always: true) }
     }
 
     /// Label, meter, value - the stat tile's grammar turned on its side, because

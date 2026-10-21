@@ -36,8 +36,10 @@ final class SystemStats {
 
     private init() {}
 
-    func start() {
-        guard Settings.shared.stats, timer == nil else { return }
+    /// `always` is for Tools ▸ System, which shows these whether or not the
+    /// home tab's strip is switched on. `stop()` on collapse ends it either way.
+    func start(always: Bool = false) {
+        guard always || Settings.shared.stats, timer == nil else { return }
         // Read once per open rather than on every tick. Free space does not move
         // in the seconds an island is up, and the capacity query is the most
         // expensive read in this file.
