@@ -98,6 +98,10 @@ final class FinderKeys {
     }
 
     private func fire(_ signature: UInt32) {
+        // Renaming a file or typing in the search field: the keys are the
+        // text's. Claimed anyway, ⌘X there copied instead of cutting and the
+        // ⌘V after it became ⌥⌘V, which a text field ignores.
+        guard !Self.editingText else { return handBack(signature) }
         switch signature {
         case 60: cut()
         case 61: paste()
@@ -205,6 +209,35 @@ final class FinderKeys {
     }
 
     // MARK: - Keys
+
+    private static var editingText: Bool {
+        let system = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(system, 0.2)
+        var focused: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(system, kAXFocusedUIElementAttribute as CFString, &focused) == .success,
+              let focused, CFGetTypeID(focused) == AXUIElementGetTypeID()
+        else { return false }
+        var role: CFTypeRef?
+        AXUIElementCopyAttributeValue(focused as! AXUIElement, kAXRoleAttribute as CFString, &role)
+        return [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole].contains(role as? String)
+    }
+
+    /// Posts the key the Finder should have had. Every claim is dropped first -
+    /// a registered key catches its own synthetic copy - and taken back once
+    /// the press has landed.
+    private func handBack(_ signature: UInt32) {
+        let key = switch signature {
+        case 60: kVK_ANSI_X
+        case 61: kVK_ANSI_V
+        default: kVK_F2
+        }
+        unregister(&cutRef)
+        unregister(&pasteRef)
+        unregister(&renameRef)
+        active = false
+        press(CGKeyCode(key), flags: signature == 62 ? [] : .maskCommand)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in self?.settingChanged() }
+    }
 
     private func press(_ key: CGKeyCode, flags: CGEventFlags) {
         let source = CGEventSource(stateID: .combinedSessionState)

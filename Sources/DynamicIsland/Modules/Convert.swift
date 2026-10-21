@@ -66,8 +66,11 @@ final class Convert {
     // MARK: - Jobs
 
     func epubToMobi(_ url: URL) {
+        // Unique like every other output here: a Book.mobi already beside the
+        // EPUB - bought, or made by Calibre - was silently replaced.
+        let target = Self.unique(url.deletingPathExtension().appendingPathExtension("mobi"))
         start(title: url.lastPathComponent, detail: "to MOBI", progress: nil) {
-            try Mobi.convert(url)
+            try Mobi.convert(url, to: target)
         }
     }
 

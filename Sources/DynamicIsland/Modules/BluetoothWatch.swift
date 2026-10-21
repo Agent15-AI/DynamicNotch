@@ -32,6 +32,11 @@ final class BluetoothWatch: NSObject {
     /// Deliberately raises the permission dialog. Only ever called from the
     /// button in Settings, so the prompt always follows an explicit request.
     func requestAccess() {
+        // Refused once, macOS never asks again - the pane is the only way back.
+        guard CBCentralManager.authorization != .denied else {
+            Permissions.open("Privacy_Bluetooth")
+            return
+        }
         connect()
     }
 

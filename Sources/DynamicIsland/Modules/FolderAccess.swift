@@ -32,12 +32,19 @@ enum FolderAccess {
     /// at the machine to answer. And the flag is cleared *before* the attempt,
     /// so an attempt that never comes back is remembered as a failure - which
     /// means one unanswered dialog, not a fresh one on every launch.
-    static func probe(_ key: String, _ folder: URL, then handler: @escaping @MainActor (Set<String>) -> Void) {
+    ///
+    /// `refused` runs when the read fails. A refusal is final - macOS never shows
+    /// the dialog again - so the Allow buttons pass one that opens the pane.
+    static func probe(_ key: String, _ folder: URL, refused: (@MainActor () -> Void)? = nil,
+                      then handler: @escaping @MainActor (Set<String>) -> Void) {
         setGranted(key, false)
         DispatchQueue.global(qos: .utility).async {
             let names = listing(folder)
             DispatchQueue.main.async {
-                guard let names else { return }
+                guard let names else {
+                    MainActor.assumeIsolated { refused?() }
+                    return
+                }
                 setGranted(key, true)
                 MainActor.assumeIsolated { handler(names) }
             }
