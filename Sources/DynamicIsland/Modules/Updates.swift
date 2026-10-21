@@ -76,7 +76,7 @@ final class Updates {
 
             // JSON rather than the plain listing: the human-readable output
             // changes between Homebrew releases, the schema does not.
-            if let data = Self.run(brew, ["outdated", "--json=v2"]),
+            if let data = Self.run(brew, ["outdated", "--json=v2"])?.output,
                let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 for entry in root["formulae"] as? [[String: Any]] ?? [] {
                     guard let name = entry["name"] as? String else { continue }
@@ -99,7 +99,7 @@ final class Updates {
                 }
             }
 
-            if let mas, let data = Self.run(mas, ["outdated"]),
+            if let mas, let data = Self.run(mas, ["outdated"])?.output,
                let text = String(data: data, encoding: .utf8) {
                 // `mas outdated` prints: <id> <Name> (<old> -> <new>)
                 for line in text.split(separator: "\n") {
@@ -143,14 +143,16 @@ final class Updates {
             : ["upgrade", item.name]
 
         DispatchQueue.global(qos: .userInitiated).async {
-            _ = Self.run(brew, arguments)
+            let ok = Self.run(brew, arguments)?.ok == true
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self.working = nil
-                    self.items.removeAll { $0.id == item.id }
+                    // A cask that needs a password, or a failed download, used
+                    // to read "Updated" and vanish from the list regardless.
+                    if ok { self.items.removeAll { $0.id == item.id } }
                     HUD.shared.show(
-                        .utility(symbol: "arrow.down.circle.fill",
-                                 title: item.name, detail: "Updated"),
+                        .utility(symbol: ok ? "arrow.down.circle.fill" : "exclamationmark.triangle.fill",
+                                 title: item.name, detail: ok ? "Updated" : "Homebrew failed"),
                         for: 2.4
                     )
                 }
@@ -189,12 +191,12 @@ final class Updates {
 
         DispatchQueue.global(qos: .userInitiated).async {
             let installed = Set(
-                (String(data: Self.run(brew, ["list", "-1"]) ?? Data(), encoding: .utf8) ?? "")
+                (String(data: Self.run(brew, ["list", "-1"])?.output ?? Data(), encoding: .utf8) ?? "")
                     .split(separator: "\n").map(String.init)
             )
 
             func names(_ arguments: [String]) -> [String] {
-                guard let data = Self.run(brew, arguments),
+                guard let data = Self.run(brew, arguments)?.output,
                       let text = String(data: data, encoding: .utf8) else { return [] }
                 return text.split(separator: "\n")
                     .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -233,17 +235,18 @@ final class Updates {
         arguments.append(package.name)
 
         DispatchQueue.global(qos: .userInitiated).async {
-            _ = Self.run(brew, arguments)
+            let ok = Self.run(brew, arguments)?.ok == true
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self.working = nil
-                    if let index = self.results.firstIndex(where: { $0.id == package.id }) {
+                    if ok, let index = self.results.firstIndex(where: { $0.id == package.id }) {
                         self.results[index].installed = installing
                     }
                     HUD.shared.show(
-                        .utility(symbol: installing ? "shippingbox.fill" : "trash.fill",
+                        .utility(symbol: ok ? (installing ? "shippingbox.fill" : "trash.fill")
+                                     : "exclamationmark.triangle.fill",
                                  title: package.name,
-                                 detail: installing ? "Installed" : "Removed"),
+                                 detail: ok ? (installing ? "Installed" : "Removed") : "Homebrew failed"),
                         for: 2.4
                     )
                 }
@@ -251,7 +254,9 @@ final class Updates {
         }
     }
 
-    private nonisolated static func run(_ path: String, _ arguments: [String]) -> Data? {
+    /// `ok` is the exit status. Only installs and upgrades read it: `brew search`
+    /// exits 1 for no results, which is an answer, not a failure.
+    private nonisolated static func run(_ path: String, _ arguments: [String]) -> (output: Data, ok: Bool)? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path)
         process.arguments = arguments
@@ -265,6 +270,6 @@ final class Updates {
         guard (try? process.run()) != nil else { return nil }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
-        return data
+        return (data, process.terminationStatus == 0)
     }
 }

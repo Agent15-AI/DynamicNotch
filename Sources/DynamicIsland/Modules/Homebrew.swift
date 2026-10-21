@@ -95,11 +95,12 @@ final class Homebrew {
             busy = nil
             // `brew` reports failure in prose on stdout as often as in its exit
             // code, so the receipt says which package and lets the user look.
-            let worked = install
-                ? !output.lowercased().contains("error")
-                : !output.lowercased().contains("no such keg")
-            if let index = results.firstIndex(where: { $0.id == package.id }) {
-                results[index].installed = install && worked
+            // One test for both: "No such keg" is an Error line too, and only
+            // looking for that one reported "Removed" for a package `brew`
+            // refused to uninstall because something else depends on it.
+            let worked = !output.lowercased().contains("error")
+            if worked, let index = results.firstIndex(where: { $0.id == package.id }) {
+                results[index].installed = install
             }
             HUD.shared.show(.utility(
                 symbol: worked ? (install ? "shippingbox.fill" : "trash.fill") : "exclamationmark.triangle.fill",
