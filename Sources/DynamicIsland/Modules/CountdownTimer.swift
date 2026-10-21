@@ -87,6 +87,18 @@ final class CountdownTimer {
         cancel()
         total = minutes * 60
         schedule(after: total)
+        // Only Alarms used to ask for notifications, so for everyone else the
+        // alert below was accepted and never shown: a timer that ran out while
+        // the app was quit, or while nobody watched the island, went off in
+        // silence. Asked on first use, never on launch; once answered this
+        // returns at once. Re-added when allowed, in case the copy added while
+        // the prompt was up is dropped.
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            Task { @MainActor in
+                if let endsAt = self.endsAt { self.scheduleNotification(after: endsAt.timeIntervalSinceNow) }
+            }
+        }
     }
 
     func pause() {
