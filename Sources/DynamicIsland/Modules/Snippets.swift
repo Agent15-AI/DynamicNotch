@@ -85,6 +85,11 @@ final class Snippets {
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.4, execute: work)
     }
 
+    /// The pending debounced write, now. Run on quit.
+    func flush() {
+        save?.perform()
+    }
+
     /// Nonisolated for the reason `Clipboard.writer` gives: a work item closure
     /// made on the main actor traps when a background queue runs it.
     nonisolated private static func writer(_ snapshot: [Snippet]) -> DispatchWorkItem {

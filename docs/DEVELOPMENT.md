@@ -886,7 +886,6 @@ uses no Marvel logos, marks, or artwork.
 | Calendar | `EKEventStoreChanged` + on open | none |
 | File shelf | AppKit drag destination | none |
 | Timer | one work item at the end date | none |
-| Focus / Do Not Disturb | `DispatchSource` file watch | none |
 | Bluetooth | `IOBluetooth` connect notifications | none |
 | Downloads | `DispatchSource` folder watch | none |
 | Audio output switcher | reuses the CoreAudio listeners | none |
@@ -1128,14 +1127,7 @@ dictionary** - there is nothing to hand off to, so this is built here.
 - **Alarms** use `UNCalendarNotificationTrigger`, so macOS fires them whether or
   not this app is frontmost, and nothing of ours has to run in between.
 - **World clocks** show local plus whatever zones are set in
-  `Settings ▸ Modules`. Defaults to Asia/Kolkata.
-
-### Focus
-
-Shows the active Focus mode, with a glyph matched to it (sleep, work, driving and
-so on). There is no public API for another process's Focus state, so this watches
-`~/Library/DoNotDisturb/DB/Assertions.json` with a `DispatchSource` - event
-driven, nothing runs while Focus is unchanged.
+  `Settings ▸ Modules`. Defaults to New York, London and Tokyo.
 
 ### Keyboard
 

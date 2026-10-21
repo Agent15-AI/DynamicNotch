@@ -41,9 +41,9 @@ click installs it.
 - **Command bar:** press `⌥Space`. Open apps, find files, do sums and unit
   conversions, ask "what's on tomorrow" or "will it rain on friday", or run any of
   the island's actions by name.
-- **Menu bar capsule:** a small capsule sits in your menu bar. Click it to hide your
-  other menu bar icons, and click again to bring them back (`⌃⌘B`). Right-click it
-  for **Settings**, **Check for Updates** and **Quit**.
+- **Menu bar capsule:** a small capsule sits in your menu bar. On macOS 27, click it
+  to hide your other menu bar icons, and click again to bring them back (`⌃⌘B`).
+  Right-click it for **Settings**, **Check for Updates** and **Quit**.
 
 On first launch the island briefly says how to open it, then stays out of the way.
 
@@ -71,7 +71,8 @@ On first launch the island briefly says how to open it, then stays out of the wa
   connecting (with their battery), finished downloads, new screenshots (drag one
   straight into an app), the microphone being in use, and a copied verification
   code (click to copy just the code).
-- **Menu bar** - hide icons you don't need and reorder them, like Bartender or Ice.
+- **Menu bar** (macOS 27) - hide icons you don't need and reorder them, like
+  Bartender or Ice.
 
 ![The clock tab](docs/images/clock.png)
 

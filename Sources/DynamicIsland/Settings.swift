@@ -1,4 +1,5 @@
 import AppKit
+import MenuBarShim
 import ServiceManagement
 import SwiftUI
 
@@ -102,10 +103,8 @@ final class Settings {
     var shelf: Bool { didSet { save(shelf, "shelf") } }
     var battery: Bool { didSet { save(battery, "battery") } }
     var calendar: Bool { didSet { save(calendar, "calendar") } }
-    var buildStatus: Bool { didSet { save(buildStatus, "buildStatus") } }
     var bluetooth: Bool { didSet { save(bluetooth, "bluetooth") } }
     var downloads: Bool { didSet { save(downloads, "downloads") } }
-    var focus: Bool { didSet { save(focus, "focus") } }
     var timer: Bool { didSet { save(timer, "timer") } }
     /// CPU, GPU, memory, disk and network on the home tab. Sampled only while open.
     var stats: Bool { didSet { save(stats, "stats") } }
@@ -255,17 +254,17 @@ final class Settings {
         shelf = flag("shelf", true)
         battery = flag("battery", true)
         calendar = flag("calendar", true)
-        buildStatus = flag("buildStatus", true)
         bluetooth = flag("bluetooth", true)
         downloads = flag("downloads", true)
-        focus = flag("focus", true)
         timer = flag("timer", true)
         stats = flag("stats", true)
         recording = flag("recording", true)
         screenshots = flag("screenshots", true)
         diskImages = flag("diskImages", true)
         mixer = flag("mixer", true)
-        menuBar = flag("menuBar", true)
+        // Only where the menu bar can hide icons at all (macOS 27): on by
+        // default anywhere else, every click on the capsule was an error.
+        menuBar = flag("menuBar", DIMenuBarRestrictionAvailable())
         clipboard = flag("clipboard", true)
         upNextMinutes = num("upNextMinutes", 5)
         weather = flag("weather", true)
@@ -274,7 +273,7 @@ final class Settings {
         menuBarCollapsed = flag("menuBarCollapsed", false)
         menuBarChoices = (d.dictionary(forKey: "menuBarChoices") as? [String: Bool]) ?? [:]
         menuBarRehideDelay = num("menuBarRehideDelay", 15)
-        worldClocks = (d.array(forKey: "worldClocks") as? [String]) ?? ["Asia/Kolkata"]
+        worldClocks = (d.array(forKey: "worldClocks") as? [String]) ?? ["America/New_York", "Europe/London", "Asia/Tokyo"]
         onboarded = flag("onboarded", false)
         hideInFullscreen = flag("hideInFullscreen", true)
         externalBrightness = flag("externalBrightness", true)

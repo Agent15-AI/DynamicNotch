@@ -78,12 +78,19 @@ final class DiskImages {
         DispatchQueue.global(qos: .userInitiated).async {
             let manager = FileManager()
             var failure: String?
+            // Copied in beside the old copy before that one is trashed: trashing
+            // first left no app at all when the copy failed - a full disk, a
+            // damaged image.
+            let staging = destination.deletingLastPathComponent().appendingPathComponent(".\(name).installing")
             do {
+                try? manager.removeItem(at: staging)
+                try manager.copyItem(at: app, to: staging)
                 if manager.fileExists(atPath: destination.path) {
                     try manager.trashItem(at: destination, resultingItemURL: nil)
                 }
-                try manager.copyItem(at: app, to: destination)
+                try manager.moveItem(at: staging, to: destination)
             } catch {
+                try? manager.removeItem(at: staging)
                 failure = error.localizedDescription
             }
 

@@ -90,6 +90,11 @@ final class Notes {
         )
     }
 
+    /// The pending debounced write, now. Run on quit.
+    func flush() {
+        save?.perform()
+    }
+
     /// Debounced. Typing a sentence writes the file once, not thirty times.
     private func persist() {
         save?.cancel()

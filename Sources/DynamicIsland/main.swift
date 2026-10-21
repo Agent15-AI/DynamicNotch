@@ -30,7 +30,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Screenshots.shared.start()
         DiskImages.shared.start()
         Sensors.shared.start()
-        FocusMode.shared.start()
         MenuBarHider.shared.start()
         // Launch at login is on from the first run; the switch in Settings →
         // General still turns it off, and this never overrides that choice.
@@ -136,6 +135,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // A child process outlives its parent. Left running, the helper streamed
         // into a closed pipe until the next launch's `killOrphans`.
         NowPlaying.shared.stop()
+        // Their writes wait half a second for typing to stop; quitting inside
+        // that window lost the last edit.
+        Notes.shared.flush()
+        Snippets.shared.flush()
+        Clipboard.shared.flush()
     }
 
     /// `withObservationTracking` fires once per change, so each handler re-arms

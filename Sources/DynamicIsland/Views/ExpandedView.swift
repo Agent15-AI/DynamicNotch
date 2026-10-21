@@ -168,7 +168,6 @@ private struct TabPill: View {
 
 private struct StatusCluster: View {
     var battery = Battery.shared
-    var focus = FocusMode.shared
     var countdown = CountdownTimer.shared
     var audio = AudioMonitor.shared
     @State private var hovering = false
@@ -176,14 +175,6 @@ private struct StatusCluster: View {
     var body: some View {
         HStack(spacing: 8) {
             if audio.micActive { MicIndicator(size: 9) }
-
-            if focus.active {
-                Image(systemName: focus.symbol)
-                    .font(.system(size: 10))
-                    .foregroundStyle(Theme.gold)
-                    .help(focus.name.map { "Focus: \($0)" } ?? "Focus on")
-                    .transition(.scale(scale: 0.8).combined(with: .opacity))
-            }
 
             if countdown.running || countdown.paused {
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
