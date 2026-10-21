@@ -32,6 +32,27 @@ enum Permissions {
         return string.contains("cdhash")
     }
 
+    /// True when a grant may belong to an earlier build: the signature cannot
+    /// carry grants over, and a different build has run on this Mac before. The
+    /// first build a Mac ever runs has no earlier grant to lose, and telling a new
+    /// user "granted to an older build" about something never asked for is false.
+    /// Read once per launch - the signature does not change while it runs.
+    static let grantsMayBeStale: Bool = {
+        guard signatureIsUnstable,
+              let code = try? staticCode()
+        else { return false }
+        var info: CFDictionary?
+        guard SecCodeCopySigningInformation(code, [], &info) == errSecSuccess,
+              let hash = (info as? [String: Any])?[kSecCodeInfoUnique as String] as? Data
+        else { return false }
+        let current = hash.base64EncodedString()
+        guard let first = UserDefaults.standard.string(forKey: "firstBuildHash") else {
+            UserDefaults.standard.set(current, forKey: "firstBuildHash")
+            return false
+        }
+        return first != current
+    }()
+
     private static func staticCode() throws -> SecStaticCode {
         var code: SecStaticCode?
         let status = SecStaticCodeCreateWithPath(Bundle.main.bundleURL as CFURL, [], &code)
@@ -41,7 +62,7 @@ enum Permissions {
 
     /// The honest detail line for a refused permission.
     static func detail(for name: String) -> String {
-        signatureIsUnstable
+        grantsMayBeStale
             ? "Granted to an older build - switch \(name) off and on"
             : "Allow it in System Settings"
     }

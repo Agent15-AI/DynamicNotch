@@ -892,7 +892,7 @@ private struct ContextColumn: View {
 
             if !calendar.authorized {
                 PermissionNotice(
-                    message: Permissions.signatureIsUnstable
+                    message: Permissions.grantsMayBeStale
                         ? "Calendar was granted to an older build"
                         : "Calendar access is off",
                     action: "Allow",
